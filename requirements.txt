@@ -7,3 +7,7 @@ PyPDF2
 requests
 streamlit
 python-multipart
+huggingface_hub
+langchain-community
+python-dotenv
+PyMuPDF

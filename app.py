@@ -1,45 +1,45 @@
 import streamlit as st
 import requests
 
-API_URL = "http://localhost:8000"  # Ajuste se backend estiver em outro lugar
+API_URL = "http://localhost:8000"  # Ajuste conforme o local do seu backend
 
-st.title("Análise Tributária de Nota Fiscal")
+st.set_page_config(page_title="Análise Tributária de NF", layout="centered")
+st.title("🔍 Análise Tributária de Nota Fiscal")
 
-# Seletor de tipo de envio
-tipo_envio = st.radio("Como deseja enviar sua nota fiscal?", ( "Digitar Texto"))
-
-# if tipo_envio == "Enviar PDF":
-#     uploaded_file = st.file_uploader("Envie sua Nota Fiscal em PDF", type=["pdf"])
-#     if uploaded_file:
-#         with st.spinner("Enviando nota fiscal para análise..."):
-#             files = {"file": (uploaded_file.name, uploaded_file, "application/pdf")}
-#             response = requests.post(f"{API_URL}/upload_nf/", files=files)
-#             if response.status_code == 200:
-#                 json_resp = response.json()
-#                 if "error" in json_resp:
-#                     st.error(json_resp["error"])
-#                 else:
-#                     st.success(json_resp["message"])
-#                     st.markdown("### Resumo Tributário da Nota Fiscal:")
-#                     st.write(json_resp.get("resumo_tributario", "Nenhum resumo disponível."))
-#             else:
-#                 st.error("Erro ao enviar arquivo para o backend.")
+# Seletor de tipo de envio (apenas texto ativo por enquanto)
+tipo_envio = st.radio("Como deseja enviar sua nota fiscal?", ["Digitar Texto"])
 
 if tipo_envio == "Digitar Texto":
-    texto_nf = st.text_area("Cole ou digite os dados da Nota Fiscal aqui:")
-    if st.button("Enviar para Análise"):
-        if texto_nf.strip() == "":
-            st.warning("Digite o conteúdo da nota fiscal antes de enviar.")
+    st.markdown("Insira abaixo o conteúdo textual da nota fiscal:")
+    texto_nf = st.text_area("Conteúdo da Nota Fiscal", height=300)
+
+    pergunta_personalizada = st.text_input("Deseja fazer uma pergunta específica sobre a nota? (opcional)")
+
+    if st.button("🔎 Enviar para Análise"):
+        if not texto_nf.strip():
+            st.warning("⚠️ O conteúdo da nota fiscal não pode estar vazio.")
         else:
-            with st.spinner("Enviando texto para análise..."):
-                response = requests.post(f"{API_URL}/upload_nf_texto/", json={"conteudo": texto_nf})
-                if response.status_code == 200:
-                    json_resp = response.json()
-                    if "error" in json_resp:
-                        st.error(json_resp["error"])
+            with st.spinner("⏳ Analisando nota fiscal..."):
+                try:
+                    payload = {
+                        "conteudo": texto_nf
+                    }
+
+                    params = {}
+                    if pergunta_personalizada.strip():
+                        params["pergunta"] = pergunta_personalizada.strip()
+
+                    response = requests.post(f"{API_URL}/upload_nf_texto/", json=payload, params=params)
+
+                    if response.status_code == 200:
+                        resultado = response.json()
+                        if "error" in resultado:
+                            st.error(f"❌ Erro: {resultado['error']}")
+                        else:
+                            st.success("✅ Nota fiscal analisada com sucesso!")
+                            st.markdown("### 🧾 Resumo Tributário da Nota Fiscal:")
+                            st.write(resultado.get("resumo_tributario", "Nenhuma informação encontrada."))
                     else:
-                        st.success(json_resp["message"])
-                        st.markdown("### Resumo Tributário da Nota Fiscal:")
-                        st.write(json_resp.get("resumo_tributario", "Nenhum resumo disponível."))
-                else:
-                    st.error("Erro ao enviar texto para o backend.")
+                        st.error(f"Erro na requisição: Código {response.status_code}")
+                except Exception as e:
+                    st.error(f"Erro ao conectar com o backend: {e}")

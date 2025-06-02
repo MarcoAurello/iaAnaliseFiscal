@@ -154,7 +154,11 @@ def processar_documento(documentos):
     prompt_template = gerar_prompt_analise_nf()
 
     CHAIN = ConversationalRetrievalChain.from_llm(
-        llm=ChatOpenAI(temperature=0, openai_api_key=OPENAI_API_KEY),
+        llm = ChatOpenAI(
+model_name="gpt-3.5-turbo",
+    temperature=0,
+    openai_api_key=OPENAI_API_KEY
+    ),
         memory=memory,
         retriever=retriever,
         return_source_documents=True,
